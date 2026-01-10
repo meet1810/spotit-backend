@@ -45,19 +45,35 @@ export const analyzeImage = async (imagePath) => {
     }
 
     const prompt = `
-    Analyze this image for civic issues.
-    Focus ONLY on: Garbage, Potholes, Water Logging, Road Obstruction, Signage Damage.
-    If none are visible, set 'valid' to false.
+You are a STRICT civic issue validator.
 
-    Output Schema:
-    {
-      "valid": boolean,
-      "issue_type": stringOrNull,
-      "severity": "LOW" | "MEDIUM" | "HIGH" | "NONE",
-      "confidence": number,
-      "description": string
-    }
-    `;
+Allowed civic issues ONLY:
+- Garbage
+- Potholes
+- Water Logging
+- Road Obstruction
+- Signage Damage
+
+Rules:
+- If the image does NOT clearly contain one of the allowed civic issues:
+  → valid = false
+  → severity = "NONE"
+  → issue_type = null
+- DO NOT guess.
+- DO NOT infer.
+- If unsure, mark valid = false.
+
+Return ONLY valid JSON in this schema:
+
+{
+  "valid": boolean,
+  "issue_type": "Garbage" | "Potholes" | "Water Logging" | "Road Obstruction" | "Signage Damage" | null,
+  "severity": "LOW" | "MEDIUM" | "HIGH" | "NONE",
+  "confidence": number,
+  "description": string
+}
+`;
+
 
     try {
         const imagePart = fileToGenerativePart(imagePath, "image/jpeg");
@@ -78,8 +94,24 @@ export const analyzeImage = async (imagePath) => {
         // we can usually parse directly.
         const responseText = result.response.candidates[0].content.parts[0].text;
 
-        return JSON.parse(responseText);
+        const parsed = JSON.parse(responseText);
+        // HARD SAFETY CHECK (server-side authority)
+        if (
+            !parsed.valid ||
+            !parsed.issue_type ||
+            parsed.severity === "NONE" ||
+            parsed.confidence < 0.6
+        ) {
+            return {
+                valid: false,
+                issue_type: null,
+                severity: "NONE",
+                confidence: parsed.confidence || 0,
+                description: "Image does not contain a valid civic issue"
+            };
+        }
 
+        return parsed;
     } catch (error) {
         console.error("Vertex AI Gemini analysis error:", error);
         return {

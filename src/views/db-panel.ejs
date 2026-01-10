@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpotIt DB Management</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 2rem;
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 0.5rem;
+        }
+
+        .card {
+            border: 1px solid #ddd;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            background: #f9f9f9;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 4px;
+            color: white;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-right: 0.5rem;
+            transition: background 0.2s;
+        }
+
+        .btn-sync {
+            background-color: #28a745;
+        }
+
+        .btn-sync:hover {
+            background-color: #218838;
+        }
+
+        .btn-force {
+            background-color: #ffc107;
+            color: #000;
+        }
+
+        .btn-force:hover {
+            background-color: #e0a800;
+        }
+
+        .btn-drop {
+            background-color: #dc3545;
+        }
+
+        .btn-drop:hover {
+            background-color: #c82333;
+        }
+
+        .actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+        }
+
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-danger {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        code {
+            background: #eee;
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🛠️ Database Management Panel</h1>
+
+    <% if (message) { %>
+        <div class="alert alert-success">
+            <%= message %>
+        </div>
+        <% } %>
+
+            <% if (error) { %>
+                <div class="alert alert-danger">
+                    <%= error %>
+                </div>
+                <% } %>
+
+                    <div class="card">
+                        <h3>Database Operations</h3>
+                        <p>Use these tools to manage the database schema. <br><strong>Note:</strong> "Force Sync" and
+                            "Drop" are destructive actions.</p>
+
+                        <form action="/db-panel" method="POST" class="actions">
+                            <button type="submit" name="action" value="sync" class="btn btn-sync">Sync DB
+                                (Alter)</button>
+                            <button type="submit" name="action" value="force_sync" class="btn btn-force"
+                                onclick="return confirm('WARNING: This will DELETE ALL DATA and recreate tables. Are you sure?')">Force
+                                Sync</button>
+                            <button type="submit" name="action" value="drop" class="btn btn-drop"
+                                onclick="return confirm('CRITICAL WARNING: This will DELETE THE ENTIRE DATABASE SCHEMA. Are you sure?')">Drop
+                                DB</button>
+                            <button type="submit" name="action" value="seed_admin" class="btn btn-sync"
+                                style="background-color: #17a2b8;">Seed Admin</button>
+                        </form>
+                    </div>
+
+                    <div class="card">
+                        <h3>Legend</h3>
+                        <ul>
+                            <li><strong>Sync (Alter)</strong>: Updates schema to match models (Safe-ish). Adds columns,
+                                etc.</li>
+                            <li><strong>Force Sync</strong>: <code>DROP TABLE IF EXISTS</code> then
+                                <code>CREATE TABLE</code>. Deletes data.</li>
+                            <li><strong>Drop DB</strong>: Drops all tables. Database becomes empty.</li>
+                        </ul>
+                    </div>
+</body>
+
+</html>

@@ -1,5 +1,6 @@
 import { DataTypes } from "sequelize";
 import sequelize from "../config/database.js";
+import User from "./User.js";
 
 const Report = sequelize.define("Report", {
     imagePath: {
@@ -20,5 +21,8 @@ const Report = sequelize.define("Report", {
 }, {
     timestamps: true
 });
+
+Report.belongsTo(User, { foreignKey: 'userId', targetKey: 'u_id' });
+User.hasMany(Report, { foreignKey: 'userId', sourceKey: 'u_id' });
 
 export default Report;
