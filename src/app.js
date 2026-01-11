@@ -11,6 +11,8 @@ import workerTaskRoutes from "./routes/worker/task.routes.js";
 import notificationRoutes from "./routes/notification.routes.js";
 import systemRoutes from "./routes/system.routes.js";
 import rewardRoutes from "./routes/admin/reward.routes.js";
+import mobileRewardRoutes from "./routes/mobile/reward.routes.js";
+
 
 import swaggerUi from "swagger-ui-express";
 import swaggerSpec from "./config/swagger.js";
@@ -30,6 +32,8 @@ app.use("/api/admin", adminDataRoutes); // Admin Data Routes
 app.use("/api/admin/workers", workerRoutes); // Admin Worker Routes
 app.use("/api/admin/dashboard", dashboardRoutes); // Admin Dashboard Routes
 app.use("/api/admin/rewards", rewardRoutes); // Admin Reward Routes
+app.use("/api/rewards", mobileRewardRoutes); // Mobile Reward Routes
+
 app.use("/api/worker/auth", workerAuthRoutes); // Worker Auth Routes
 app.use("/api/worker/tasks", workerTaskRoutes); // Worker Task Routes
 app.use("/api/notifications", notificationRoutes); // Notification API
