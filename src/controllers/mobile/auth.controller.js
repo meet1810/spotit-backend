@@ -3,6 +3,8 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { OAuth2Client } from "google-auth-library";
 
+import { sendWelcomeEmail } from "../../services/email.service.js";
+
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const generateToken = (user) => {
@@ -15,7 +17,7 @@ const generateToken = (user) => {
 
 export const register = async (req, res) => {
     try {
-        const { name, email, password } = req.body;
+        const { name, email, password, fcmToken } = req.body;
         console.log(req.body);
 
 
@@ -34,7 +36,11 @@ export const register = async (req, res) => {
             name,
             email,
             password: hashedPassword,
+            fcmToken // Save FCM Token
         });
+
+        // Send Welcome Email
+        sendWelcomeEmail(user);
 
         const token = generateToken(user);
 
@@ -47,7 +53,7 @@ export const register = async (req, res) => {
 
 export const login = async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { email, password, fcmToken } = req.body;
 
         const user = await User.findOne({
             where: { email }
@@ -62,6 +68,12 @@ export const login = async (req, res) => {
             return res.status(401).json({ error: "Invalid credentials" });
         }
 
+        // Update fcmToken if provided
+        if (fcmToken) {
+            user.fcmToken = fcmToken;
+            await user.save();
+        }
+
         const token = generateToken(user);
         res.json({ success: true, token, user });
     } catch (err) {
@@ -72,7 +84,7 @@ export const login = async (req, res) => {
 
 export const googleLogin = async (req, res) => {
     try {
-        const { idToken } = req.body;
+        const { idToken, fcmToken } = req.body;
 
         // Verify Google Token
         const ticket = await client.verifyIdToken({
@@ -92,6 +104,7 @@ export const googleLogin = async (req, res) => {
                 // Link Google account to existing email user
                 user.googleId = googleId;
                 user.profilePicture = picture || user.profilePicture;
+                if (fcmToken) user.fcmToken = fcmToken;
                 await user.save();
             } else {
                 // Create new user
@@ -100,7 +113,17 @@ export const googleLogin = async (req, res) => {
                     email,
                     googleId,
                     profilePicture: picture,
+                    fcmToken
                 });
+
+                // Send Welcome Email
+                sendWelcomeEmail(user);
+            }
+        } else {
+            // Update fcmToken on login if provided
+            if (fcmToken) {
+                user.fcmToken = fcmToken;
+                await user.save();
             }
         }
 

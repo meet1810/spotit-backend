@@ -47,18 +47,25 @@ export const analyzeImage = async (imagePath) => {
     const prompt = `
 You are a STRICT civic issue validator.
 
-Allowed civic issues ONLY:
-- Garbage
-- Potholes
-- Water Logging
-- Road Obstruction
-- Signage Damage
+Allowed civic issue categories ONLY:
+- GARBAGE
+- ROAD_DAMAGE
+- WATER_LEAKAGE
+- SEWAGE
+- STREET_LIGHT
+- ILLEGAL_PARKING
+- ENCROACHMENT
+- DRAINAGE
+- PUBLIC_SAFETY
+- OTHER
 
 Rules:
-- If the image does NOT clearly contain one of the allowed civic issues:
+- Identify the primary issue in the image.
+- Map it to one of the Allowed Categories.
+- If the image does NOT contain a valid civic issue:
   → valid = false
   → severity = "NONE"
-  → issue_type = null
+  → category = null
 - DO NOT guess.
 - DO NOT infer.
 - If unsure, mark valid = false.
@@ -67,7 +74,7 @@ Return ONLY valid JSON in this schema:
 
 {
   "valid": boolean,
-  "issue_type": "Garbage" | "Potholes" | "Water Logging" | "Road Obstruction" | "Signage Damage" | null,
+  "category": "GARBAGE" | "ROAD_DAMAGE" | "WATER_LEAKAGE" | "SEWAGE" | "STREET_LIGHT" | "ILLEGAL_PARKING" | "ENCROACHMENT" | "DRAINAGE" | "PUBLIC_SAFETY" | "OTHER" | null,
   "severity": "LOW" | "MEDIUM" | "HIGH" | "NONE",
   "confidence": number,
   "description": string
@@ -98,13 +105,13 @@ Return ONLY valid JSON in this schema:
         // HARD SAFETY CHECK (server-side authority)
         if (
             !parsed.valid ||
-            !parsed.issue_type ||
+            !parsed.category ||
             parsed.severity === "NONE" ||
             parsed.confidence < 0.6
         ) {
             return {
                 valid: false,
-                issue_type: null,
+                category: null,
                 severity: "NONE",
                 confidence: parsed.confidence || 0,
                 description: "Image does not contain a valid civic issue"
@@ -116,10 +123,60 @@ Return ONLY valid JSON in this schema:
         console.error("Vertex AI Gemini analysis error:", error);
         return {
             valid: false,
-            issue_type: null,
+            category: null,
             severity: "NONE",
             confidence: 0.0,
             description: "Error analyzing image",
         };
+    }
+};
+
+// Verify resolution by comparing two images
+export const verifyResolution = async (originalImagePath, newImagePath) => {
+    const prompt = `
+    You are a Civic Issue Verification AI.
+    Image 1: The original reported issue (e.g., garbage, pothole).
+    Image 2: The claimed resolution (e.g., cleaned area, filled pothole).
+
+    Task:
+    1. Verify if Image 2 is the SAME location/context as Image 1.
+    2. Verify if the specific issue in Image 1 is FIXED in Image 2.
+
+    Return JSON:
+    {
+      "verified": boolean,
+      "location_match_confidence": number (0-1),
+      "fix_confidence": number (0-1),
+      "reason": string
+    }
+    `;
+
+    try {
+        const imagePart1 = fileToGenerativePart(originalImagePath, "image/jpeg");
+        const imagePart2 = fileToGenerativePart(newImagePath, "image/jpeg");
+
+        // Use the existing JSON-configured model
+        const request = {
+            contents: [{
+                role: 'user',
+                parts: [{ text: prompt }, imagePart1, imagePart2]
+            }]
+        };
+
+        const result = await model.generateContent(request);
+        const responseText = result.response.candidates[0].content.parts[0].text;
+
+        const parsed = JSON.parse(responseText);
+
+        // Strict validation logic
+        if (parsed.verified && parsed.location_match_confidence > 0.6 && parsed.fix_confidence > 0.6) {
+            return { verified: true, confidence: parsed.fix_confidence, reason: parsed.reason };
+        } else {
+            return { verified: false, confidence: parsed.fix_confidence, reason: parsed.reason || "Verification failed." };
+        }
+
+    } catch (error) {
+        console.error("Verification error:", error);
+        return { verified: false, reason: "AI Service Error: " + error.message };
     }
 };

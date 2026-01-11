@@ -86,4 +86,37 @@ router.get("/reports", getAllReports);
  */
 router.get("/reports/:id", getReportById);
 
+import { assignTask } from "../../controllers/admin/task.controller.js";
+
+/**
+ * @swagger
+ * /admin/reports/{reportId}/assign:
+ *   put:
+ *     summary: Assign a report to a worker
+ *     tags: [Admin Data]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: reportId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - workerId
+ *             properties:
+ *               workerId:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Task assigned
+ */
+router.put("/reports/:reportId/assign", assignTask);
+
 export default router;

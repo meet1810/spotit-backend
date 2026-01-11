@@ -1,6 +1,7 @@
 import fs from "fs";
 import Report from "../../models/Report.js";
 import { analyzeImage } from "../../services/ai.service.js";
+import { notifyAdmins } from "../../services/notification.service.js";
 
 export const createReport = async (req, res) => {
     try {
@@ -23,10 +24,19 @@ export const createReport = async (req, res) => {
             latitude,
             longitude,
             severity: aiResponse.severity,
+            category: aiResponse.category,
             issueCount: 1,
             aiResponse,
             userId: req.user.id
         });
+
+        // 🔔 Notify Admins
+        await notifyAdmins(
+            "New Civic Issue Reported",
+            `A new ${aiResponse.category || 'Issue'} report has been submitted.`,
+            "INFO",
+            { reportId: report.id }
+        );
 
         res.json({ success: true, report });
 
@@ -35,7 +45,6 @@ export const createReport = async (req, res) => {
         res.status(500).json({ error: "AI processing failed" });
     }
 };
-
 
 export const getUserReports = async (req, res) => {
     try {

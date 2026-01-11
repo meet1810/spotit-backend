@@ -25,3 +25,11 @@ export const requireAdmin = (req, res, next) => {
         res.status(403).json({ error: "Access denied: Admins only" });
     }
 };
+
+export const requireWorker = (req, res, next) => {
+    if (req.user && req.user.role === 'WORKER') {
+        next();
+    } else {
+        res.status(403).json({ error: "Access denied: Workers only" });
+    }
+};

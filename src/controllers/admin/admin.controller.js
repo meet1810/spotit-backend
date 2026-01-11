@@ -36,9 +36,21 @@ export const getAllReports = async (req, res) => {
         const limit = parseInt(req.query.limit) || 10;
         const offset = (page - 1) * limit;
 
+        // Filters
+        const { status, category } = req.query;
+        const where = {};
+        if (status) where.status = status;
+        if (category) where.category = category;
+
         const { count, rows } = await Report.findAndCountAll({
+            where,
             include: [{
                 model: User,
+                as: 'reporter',
+                attributes: ['u_id', 'name', 'email', 'profilePicture']
+            }, {
+                model: User,
+                as: 'worker',
                 attributes: ['u_id', 'name', 'email', 'profilePicture']
             }],
             order: [['createdAt', 'DESC']],
@@ -69,6 +81,11 @@ export const getReportById = async (req, res) => {
         const report = await Report.findByPk(id, {
             include: [{
                 model: User,
+                as: 'reporter',
+                attributes: ['u_id', 'name', 'email', 'profilePicture']
+            }, {
+                model: User,
+                as: 'worker',
                 attributes: ['u_id', 'name', 'email', 'profilePicture']
             }]
         });
