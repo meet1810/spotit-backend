@@ -4,7 +4,7 @@ import sequelize from "./config/database.js";
 import http from "http";
 import { initSocket } from "./socket.js";
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 const server = http.createServer(app);
 initSocket(server);
