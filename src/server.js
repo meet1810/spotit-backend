@@ -19,4 +19,3 @@ initSocket(server);
         console.error("DB error:", err);
     }
 })();
-
