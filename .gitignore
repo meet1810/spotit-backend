@@ -4,3 +4,4 @@ uploads/*
 !uploads/.gitkeep
 __pycache__
 src/credentials.json
+src/service.json
